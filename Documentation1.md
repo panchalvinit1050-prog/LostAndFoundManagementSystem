@@ -73,19 +73,19 @@ The **Lost & Found Management System** is a full-stack web application built wit
 
 ## 2. Architecture Diagram
 
-![Architecture](./diagrams/Lost%20%26%20Found%20Service-2026-03-13-061353.svg)
+![Architecture](./ArchitectureDiagram.svg)
 
 ---
 
 ## 3. User Flow Diagram
 
-![User Flow / OTP / Flow](./diagrams/OTP.svg)
+![User Flow / OTP / Flow](./UserFlowDiagram.svg)
 
 ---
 
 ## 4. Database ER Diagram
 
-![ER Diagram](./diagrams/er.drawio.svg)
+![ER Diagram](./DatabaseERDiagram.svg)
 
 ---
 
