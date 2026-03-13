@@ -1,0 +1,313 @@
+openapi: 3.0.3
+info:
+  title: Lost and Found Management System API
+  version: 1.0.0
+  description: REST API for reporting lost/found items, matching, claims, and admin review.
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: Auth
+  - name: LostReports
+  - name: FoundReports
+  - name: Matches
+  - name: Claims
+  - name: Admin
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp: { type: string }
+        status: { type: integer }
+        error: { type: string }
+        message: { type: string }
+        path: { type: string }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        tokenType: { type: string, example: Bearer }
+
+    ReportStatus:
+      type: string
+      enum: [OPEN, VERIFIED, MATCHED, CLAIMED, RETURNED, ARCHIVED]
+
+    ReportVisibility:
+      type: string
+      enum: [PUBLIC, INTERNAL, SECURITY_ONLY]
+
+    Category:
+      type: object
+      properties:
+        id: { type: string }
+        code: { type: string }
+        name: { type: string }
+
+    Location:
+      type: object
+      properties:
+        id: { type: string }
+        code: { type: string }
+        name: { type: string }
+
+    ReportBase:
+      type: object
+      properties:
+        id: { type: string }
+        createdBy: { type: string }
+        categoryId: { type: string }
+        locationId: { type: string }
+        title: { type: string }
+        description: { type: string }
+        status: { $ref: "#/components/schemas/ReportStatus" }
+        visibility: { $ref: "#/components/schemas/ReportVisibility" }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    LostReportCreate:
+      type: object
+      required: [categoryId, locationId, title, description, lostFrom, lostTo]
+      properties:
+        categoryId: { type: string }
+        locationId: { type: string }
+        title: { type: string }
+        description: { type: string }
+        lostFrom: { type: string }
+        lostTo: { type: string }
+        brand: { type: string }
+        color: { type: string }
+        uniqueMarks: { type: string }
+        rewardOffered: { type: boolean }
+        rewardAmount: { type: number }
+
+    FoundReportCreate:
+      type: object
+      required: [categoryId, locationId, title, description, foundAt]
+      properties:
+        categoryId: { type: string }
+        locationId: { type: string }
+        title: { type: string }
+        description: { type: string }
+        foundAt: { type: string }
+        storageLocationPublic: { type: string }
+        storageBinPrivate: { type: string }
+
+    ClaimCreate:
+      type: object
+      required: [foundReportId, answers]
+      properties:
+        foundReportId: { type: string }
+        answers:
+          type: array
+          items:
+            type: object
+            required: [questionId, answer]
+            properties:
+              questionId: { type: string }
+              answer: { type: string }
+
+    ClaimStatus:
+      type: string
+      enum: [PENDING, APPROVED, REJECTED, CANCELLED, FULFILLED]
+
+    Claim:
+      type: object
+      properties:
+        id: { type: string }
+        claimantUserId: { type: string }
+        foundReportId: { type: string }
+        status: { $ref: "#/components/schemas/ClaimStatus" }
+        reviewNote: { type: string }
+        reviewedBy: { type: string }
+        reviewedAt: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+security:
+  - bearerAuth: []
+paths:
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+
+  /api/lost-reports:
+    get:
+      tags: [LostReports]
+      summary: List lost reports
+      parameters:
+        - in: query
+          name: status
+          schema: { $ref: "#/components/schemas/ReportStatus" }
+        - in: query
+          name: categoryId
+          schema: { type: string }
+        - in: query
+          name: locationId
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ReportBase" }
+    post:
+      tags: [LostReports]
+      summary: Create lost report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LostReportCreate" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReportBase" }
+
+  /api/found-reports:
+    get:
+      tags: [FoundReports]
+      summary: List found reports
+      parameters:
+        - in: query
+          name: status
+          schema: { $ref: "#/components/schemas/ReportStatus" }
+        - in: query
+          name: categoryId
+          schema: { type: string }
+        - in: query
+          name: locationId
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ReportBase" }
+    post:
+      tags: [FoundReports]
+      summary: Create found report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FoundReportCreate" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReportBase" }
+
+  /api/matches:
+    get:
+      tags: [Matches]
+      summary: Get match candidates for a lost or found report
+      parameters:
+        - in: query
+          name: lostReportId
+          schema: { type: string }
+        - in: query
+          name: foundReportId
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    lostReportId: { type: string }
+                    foundReportId: { type: string }
+                    score: { type: number }
+                    confidence: { type: string }
+
+  /api/claims:
+    post:
+      tags: [Claims]
+      summary: Create a claim for a found report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClaimCreate" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Claim" }
+
+  /api/admin/claims/{claimId}/approve:
+    post:
+      tags: [Admin]
+      summary: Approve a claim
+      parameters:
+        - in: path
+          name: claimId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Claim" }
+
+  /api/admin/claims/{claimId}/reject:
+    post:
+      tags: [Admin]
+      summary: Reject a claim
+      parameters:
+        - in: path
+          name: claimId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reviewNote: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Claim" }
