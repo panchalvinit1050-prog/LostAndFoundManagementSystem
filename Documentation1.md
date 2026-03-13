@@ -119,6 +119,6 @@ The **Lost & Found Management System** is a full-stack web application built wit
 
 The API contract is available here:
 
-- [OpenAPI YAML](./openapi/openapi.yaml)
+- [OpenAPI YAML](./OpenSpecAPI.yaml)
 
 ---
